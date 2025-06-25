@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+conversation_history.json
+venv/
+.vscode/

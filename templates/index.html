@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>truth-terminal</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0f1b;
+            color: #e8e8e8;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a3546;
+        }
+
+        #header h1 {
+            font-size: 14px;
+            font-weight: normal;
+            color: #ffffff;
+        }
+
+        #help-text {
+            color: #8892a6;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
+
+        #chat-container::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #chat-container::-webkit-scrollbar-track {
+            background: #0a0f1b;
+        }
+
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #2a3546;
+            border: 2px solid #0a0f1b;
+        }
+
+        .message {
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .message.user {
+            color: #ffffff;
+        }
+
+        .message.bot {
+            color: #b8c0d4;
+        }
+
+        .message.system {
+            color: #9ca3af;
+        }
+
+        .prompt-line {
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        #input-container {
+            display: flex;
+            align-items: flex-start;
+            border-top: 1px solid #2a3546;
+            padding-top: 10px;
+        }
+
+        #prompt {
+            color: #8892a6;
+            margin-right: 8px;
+            white-space: nowrap;
+            padding-top: 2px;
+        }
+
+        #message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            resize: none;
+            padding: 0;
+            min-height: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #username-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #0a0f1b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #username-modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        .modal-content pre {
+            color: #e8e8e8;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+        }
+
+        .modal-content input {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            width: 300px;
+            border-bottom: 1px solid #2a3546;
+            padding: 5px 0;
+        }
+
+        .ascii-border {
+            color: #8892a6;
+            margin: 20px 0;
+        }
+
+        .model-info {
+            color: #8892a6;
+            font-size: 12px;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .model-tag {
+            color: #d4d4d8;
+        }
+
+        #cursor {
+            display: none;
+            width: 8px;
+            height: 14px;
+            background-color: #e8e8e8;
+            animation: blink 1s infinite;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        #autocomplete {
+            position: absolute;
+            background-color: #0f1823;
+            border: 1px solid #2a3546;
+            border-radius: 0;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        #autocomplete.show {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #1a2332;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .autocomplete-item:hover,
+        .autocomplete-item.selected {
+            background-color: #1a2332;
+        }
+
+        .model-tag-auto {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .model-desc {
+            color: #8892a6;
+            font-size: 12px;
+        }
+
+        .message-actions {
+            opacity: 0;
+            margin-left: 10px;
+            display: inline-flex;
+            gap: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .message:hover .message-actions {
+            opacity: 1;
+        }
+
+        .reply-btn {
+            color: #8892a6;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 6px;
+            border: 1px solid #2a3546;
+            border-radius: 3px;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .reply-btn:hover {
+            color: #ffffff;
+            border-color: #8892a6;
+        }
+
+        .reply-preview {
+            background: #0f1823;
+            border-left: 3px solid #8892a6;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #8892a6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reply-preview .close-reply {
+            cursor: pointer;
+            color: #8892a6;
+            font-size: 16px;
+            padding: 0 5px;
+        }
+
+        .reply-preview .close-reply:hover {
+            color: #ffffff;
+        }
+
+        .message-reply-context {
+            font-size: 12px;
+            color: #8892a6;
+            margin-bottom: 4px;
+            padding-left: 12px;
+            border-left: 2px solid #2a3546;
+        }
+    </style>
+</head>
+<body>
+    <div id="username-modal">
+        <div class="modal-content">
+            <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  TRUTH-TERMINAL v1.0                                        │
+│  =====================                                      │
+│                                                             │
+│  INITIATING CONNECTION...                                   │
+│  CLIENT HAS CONNECTED                                       │
+│                                                             │
+│  Enter username to continue:                                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+            </pre>
+            <div>
+                <span style="color: #8892a6;">username@truth-terminal:~$ </span>
+                <input type="text" id="username-setup" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <div id="header">
+        <h1>&lt;truth-terminal&gt;</h1>
+        <div id="help-text">
+            Press @ to see available AI models | Claude, GPT-4, O-series models and more
+        </div>
+    </div>
+
+    <div id="chat-container"></div>
+
+    <div id="input-container">
+        <div id="reply-preview" style="display: none;"></div>
+        <div style="display: flex; align-items: flex-start;">
+            <span id="prompt">&gt;</span>
+            <textarea id="message-input" rows="1"></textarea>
+        </div>
+        <div id="autocomplete"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const usernameModal = document.getElementById('username-modal');
+        const usernameSetup = document.getElementById('username-setup');
+        const prompt = document.getElementById('prompt');
+        const autocomplete = document.getElementById('autocomplete');
+        
+        let username = localStorage.getItem('username') || '';
+        let selectedIndex = -1;
+        let isAutocompleteOpen = false;
+        let lastAtPosition = -1;
+        let replyingTo = null;
+        const messagesMap = new Map();
+        
+        // Available models with descriptions
+        const models = [
+            // Claude models
+            { tag: '@claude', desc: 'Claude 3.5 Sonnet' },
+            { tag: '@claude4', desc: 'Claude 4 Sonnet' },
+            { tag: '@opus4', desc: 'Claude Opus 4' },
+            { tag: '@sonnet4', desc: 'Claude Sonnet 4' },
+            { tag: '@sonnet3.7', desc: 'Claude 3.7 Sonnet' },
+            { tag: '@sonnet3.5', desc: 'Claude 3.5 Sonnet' },
+            { tag: '@haiku', desc: 'Claude 3 Haiku' },
+            { tag: '@opus', desc: 'Claude 3 Opus' },
+            // OpenAI models
+            { tag: '@gpt4', desc: 'OpenAI GPT-4' },
+            { tag: '@gpt3', desc: 'GPT-3.5 Turbo' },
+            { tag: '@gpt4.1', desc: 'GPT-4.1' },
+            { tag: '@gpt4.1-mini', desc: 'GPT-4.1 Mini' },
+            { tag: '@gpt4.1-nano', desc: 'GPT-4.1 Nano' },
+            { tag: '@o4-mini', desc: 'O4 Mini' },
+            { tag: '@o3-mini', desc: 'O3 Mini' },
+            { tag: '@o3', desc: 'O3' },
+            { tag: '@o1-mini', desc: 'O1 Mini' }
+        ];
+        
+        // Check if username exists
+        if (username) {
+            usernameModal.classList.add('hidden');
+            prompt.textContent = `${username}@truth-terminal:~$ `;
+        }
+        
+        // Setup username
+        usernameSetup.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const newUsername = usernameSetup.value.trim();
+                if (newUsername) {
+                    username = newUsername;
+                    localStorage.setItem('username', username);
+                    usernameModal.classList.add('hidden');
+                    prompt.textContent = `${username}@truth-terminal:~$ `;
+                    messageInput.focus();
+                    
+                    // Show welcome message
+                    displayMessage({
+                        username: 'SYSTEM',
+                        message: `\n\nCONNECTION ESTABLISHED\n${'-'.repeat(50)}\n\nWelcome to truth-terminal.\nTag AI models in your messages to invoke them.\n\nExample: "hey @claude what do you think about consciousness?"\n\n`,
+                        type: 'system'
+                    });
+                }
+            }
+        });
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', (e) => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+            
+            // Check for @ symbol
+            const text = messageInput.value;
+            const cursorPos = messageInput.selectionStart;
+            
+            // Find the last @ before cursor
+            let atPos = -1;
+            for (let i = cursorPos - 1; i >= 0; i--) {
+                if (text[i] === '@') {
+                    atPos = i;
+                    break;
+                } else if (text[i] === ' ' || text[i] === '\n') {
+                    break;
+                }
+            }
+            
+            if (atPos !== -1) {
+                // Get the partial model name after @
+                const partial = text.substring(atPos + 1, cursorPos).toLowerCase();
+                const filteredModels = models.filter(m => 
+                    m.tag.toLowerCase().substring(1).startsWith(partial)
+                );
+                
+                if (filteredModels.length > 0) {
+                    showAutocomplete(filteredModels, atPos);
+                } else {
+                    hideAutocomplete();
+                }
+            } else {
+                hideAutocomplete();
+            }
+        });
+        
+        // Show autocomplete
+        function showAutocomplete(filteredModels, atPos) {
+            lastAtPosition = atPos;
+            autocomplete.innerHTML = '';
+            selectedIndex = -1;
+            
+            filteredModels.forEach((model, index) => {
+                const item = document.createElement('div');
+                item.className = 'autocomplete-item';
+                item.innerHTML = `
+                    <span class="model-tag-auto">${model.tag}</span>
+                    <span class="model-desc">${model.desc}</span>
+                `;
+                item.addEventListener('click', () => selectModel(model.tag));
+                autocomplete.appendChild(item);
+            });
+            
+            // Position autocomplete relative to @ position
+            const text = messageInput.value;
+            const textBeforeAt = text.substring(0, atPos + 1); // Include the @ symbol
+            const prompt = document.getElementById('prompt');
+            
+            // Create a temporary span to measure text width
+            const measurer = document.createElement('span');
+            measurer.style.font = window.getComputedStyle(messageInput).font;
+            measurer.style.position = 'absolute';
+            measurer.style.visibility = 'hidden';
+            measurer.style.whiteSpace = 'pre';
+            measurer.textContent = textBeforeAt;
+            document.body.appendChild(measurer);
+            
+            const textWidth = measurer.offsetWidth;
+            const promptWidth = prompt.offsetWidth;
+            document.body.removeChild(measurer);
+            
+            // Position autocomplete after the @ symbol
+            autocomplete.style.left = (promptWidth + textWidth + 8) + 'px'; // +8 to account for @ width
+            autocomplete.style.bottom = (messageInput.offsetHeight + 10) + 'px';
+            autocomplete.classList.add('show');
+            isAutocompleteOpen = true;
+        }
+        
+        // Hide autocomplete
+        function hideAutocomplete() {
+            autocomplete.classList.remove('show');
+            isAutocompleteOpen = false;
+            selectedIndex = -1;
+        }
+        
+        // Select model from autocomplete
+        function selectModel(modelTag) {
+            const text = messageInput.value;
+            const cursorPos = messageInput.selectionStart;
+            
+            // Find the end of the partial model name
+            let endPos = cursorPos;
+            for (let i = cursorPos; i < text.length; i++) {
+                if (text[i] === ' ' || text[i] === '\n') {
+                    break;
+                }
+                endPos = i + 1;
+            }
+            
+            // Replace the partial with the full model tag
+            const newText = text.substring(0, lastAtPosition) + modelTag + ' ' + text.substring(endPos);
+            messageInput.value = newText;
+            
+            // Set cursor position after the model tag
+            const newCursorPos = lastAtPosition + modelTag.length + 1;
+            messageInput.setSelectionRange(newCursorPos, newCursorPos);
+            
+            hideAutocomplete();
+            messageInput.focus();
+        }
+        
+        // Handle keyboard navigation in autocomplete
+        messageInput.addEventListener('keydown', (e) => {
+            if (!isAutocompleteOpen) return;
+            
+            const items = autocomplete.querySelectorAll('.autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection(items);
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                const selectedModel = models.filter(m => 
+                    autocomplete.textContent.includes(m.tag)
+                )[selectedIndex];
+                if (selectedModel) {
+                    selectModel(selectedModel.tag);
+                }
+            } else if (e.key === 'Escape') {
+                hideAutocomplete();
+            }
+        });
+        
+        // Update visual selection
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // Auto-scroll to bottom
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Display message
+        function displayMessage(data) {
+            // Store message in map if it has an ID
+            if (data.id) {
+                messagesMap.set(data.id, data);
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${data.type}`;
+            if (data.id) messageDiv.setAttribute('data-message-id', data.id);
+            
+            // Add reply context if this message is replying to another
+            if (data.replyTo && messagesMap.has(data.replyTo)) {
+                const repliedMsg = messagesMap.get(data.replyTo);
+                const replyContext = document.createElement('div');
+                replyContext.className = 'message-reply-context';
+                replyContext.textContent = `└─ ${repliedMsg.username}: ${repliedMsg.message.substring(0, 50)}...`;
+                messageDiv.appendChild(replyContext);
+            }
+            
+            const messageContent = document.createElement('div');
+            messageContent.style.display = 'flex';
+            messageContent.style.alignItems = 'flex-start';
+            
+            const promptSpan = document.createElement('span');
+            promptSpan.style.whiteSpace = 'nowrap';
+            promptSpan.style.flexShrink = '0';
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.style.flex = '1';
+            messageSpan.style.wordBreak = 'break-word';
+            
+            let prefix = '';
+            if (data.type === 'user') {
+                prefix = `${data.username}@truth-terminal:~$ `;
+            } else if (data.type === 'bot') {
+                prefix = `${data.username.toLowerCase()}@truth-terminal:~$ `;
+            } else if (data.type === 'system') {
+                prefix = 'system@truth-terminal:~$ ';
+            }
+            
+            promptSpan.textContent = prefix;
+            messageSpan.textContent = data.message;
+            messageContent.appendChild(promptSpan);
+            messageContent.appendChild(messageSpan);
+            
+            // Add reply button for all messages except system
+            if (data.type !== 'system' && data.id) {
+                const actions = document.createElement('span');
+                actions.className = 'message-actions';
+                
+                const replyBtn = document.createElement('button');
+                replyBtn.className = 'reply-btn';
+                replyBtn.textContent = 'reply';
+                replyBtn.onclick = () => startReply(data);
+                
+                actions.appendChild(replyBtn);
+                messageContent.appendChild(actions);
+            }
+            
+            messageDiv.appendChild(messageContent);
+            chatContainer.appendChild(messageDiv);
+            
+            // Add spacing after each message
+            const spacer = document.createElement('div');
+            spacer.style.height = '10px';
+            chatContainer.appendChild(spacer);
+            
+            scrollToBottom();
+        }
+
+        // Start replying to a message
+        function startReply(message) {
+            replyingTo = message;
+            const replyPreview = document.getElementById('reply-preview');
+            
+            // Clean the message text (remove any terminal prompt prefixes)
+            let cleanMessage = message.message;
+            // Remove bot terminal prompts if present
+            const botPromptPattern = /^[a-zA-Z0-9]+@truth-terminal:~\$ /;
+            if (cleanMessage.match(botPromptPattern)) {
+                cleanMessage = cleanMessage.replace(botPromptPattern, '');
+            }
+            
+            const truncatedMessage = cleanMessage.length > 50 
+                ? cleanMessage.substring(0, 50) + '...' 
+                : cleanMessage;
+            
+            replyPreview.innerHTML = `
+                <div class="reply-preview">
+                    <span>Replying to ${message.username}: ${truncatedMessage}</span>
+                    <span class="close-reply" onclick="cancelReply()">×</span>
+                </div>
+            `;
+            replyPreview.style.display = 'block';
+            messageInput.focus();
+        }
+        
+        // Cancel reply
+        function cancelReply() {
+            replyingTo = null;
+            document.getElementById('reply-preview').style.display = 'none';
+        }
+        
+        // Make cancelReply available globally
+        window.cancelReply = cancelReply;
+        
+        // Send message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (message && username) {
+                const messageData = {
+                    username: username,
+                    message: message
+                };
+                
+                // Add reply info if replying
+                if (replyingTo) {
+                    messageData.replyTo = replyingTo.id;
+                }
+                
+                socket.emit('send_message', messageData);
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+                cancelReply(); // Clear reply state
+            }
+        }
+
+        // Event listeners
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // ESC key to cancel reply
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && replyingTo) {
+                cancelReply();
+            }
+        });
+
+        // Socket events
+        socket.on('message', (data) => {
+            if (data.streaming) {
+                displayStreamingMessage(data);
+            } else {
+                displayMessage(data);
+            }
+        });
+
+        socket.on('stream_chunk', (data) => {
+            updateStreamingMessage(data.id, data.content);
+        });
+
+        socket.on('stream_complete', (data) => {
+            finalizeStreamingMessage(data);
+        });
+
+        // Streaming message handling
+        const streamingMessages = new Map();
+
+        function displayStreamingMessage(data) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${data.type}`;
+            messageDiv.id = `msg-${data.id}`;
+            
+            const prefix = `${data.username.toLowerCase()}@truth-terminal:~$ `;
+            messageDiv.textContent = prefix;
+            
+            chatContainer.appendChild(messageDiv);
+            
+            // Store reference
+            streamingMessages.set(data.id, {
+                element: messageDiv,
+                content: prefix,
+                username: data.username
+            });
+            
+            scrollToBottom();
+        }
+
+        function updateStreamingMessage(id, chunk) {
+            const msg = streamingMessages.get(id);
+            if (msg) {
+                msg.content += chunk;
+                msg.element.textContent = msg.content + '█';
+                scrollToBottom();
+            }
+        }
+
+        function finalizeStreamingMessage(data) {
+            const msg = streamingMessages.get(data.id);
+            if (msg && data.message) {
+                // Store the complete message in our map
+                messagesMap.set(data.id, data.message);
+                
+                // Update the message element to add reply functionality
+                const messageDiv = document.getElementById(`msg-${data.id}`);
+                messageDiv.innerHTML = ''; // Clear existing content
+                
+                // Add reply context if this message is replying to another
+                if (data.message.replyTo && messagesMap.has(data.message.replyTo)) {
+                    const repliedMsg = messagesMap.get(data.message.replyTo);
+                    const replyContext = document.createElement('div');
+                    replyContext.className = 'message-reply-context';
+                    replyContext.textContent = `└─ ${repliedMsg.username}: ${repliedMsg.message.substring(0, 50)}...`;
+                    messageDiv.appendChild(replyContext);
+                }
+                
+                const messageContent = document.createElement('div');
+                messageContent.style.display = 'flex';
+                messageContent.style.alignItems = 'flex-start';
+                
+                const messageText = document.createElement('span');
+                messageText.style.flex = '1';
+                messageText.textContent = msg.content;
+                messageContent.appendChild(messageText);
+                
+                // Add reply button
+                const actions = document.createElement('span');
+                actions.className = 'message-actions';
+                
+                const replyBtn = document.createElement('button');
+                replyBtn.className = 'reply-btn';
+                replyBtn.textContent = 'reply';
+                replyBtn.onclick = () => startReply(data.message);
+                
+                actions.appendChild(replyBtn);
+                messageContent.appendChild(actions);
+                
+                messageDiv.appendChild(messageContent);
+                
+                // Add spacing
+                const spacer = document.createElement('div');
+                spacer.style.height = '10px';
+                chatContainer.appendChild(spacer);
+                
+                streamingMessages.delete(data.id);
+            }
+        }
+
+        // Focus on input
+        if (username) {
+            messageInput.focus();
+        }
+
+        
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!autocomplete.contains(e.target) && !messageInput.contains(e.target)) {
+                hideAutocomplete();
+            }
+        });
+    </script>
+</body>
+</html>
