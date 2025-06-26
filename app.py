@@ -30,7 +30,15 @@ langfuse = Langfuse(
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app, 
+    cors_allowed_origins="*",
+    ping_timeout=120,
+    ping_interval=25,
+    logger=False,
+    engineio_logger=False,
+    async_mode='eventlet'
+)
 
 # Store current conversation in memory
 current_conversation = None

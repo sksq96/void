@@ -23,4 +23,4 @@ pip install -r requirements.txt
 
 # Run with gunicorn
 echo -e "${GREEN}Starting Void Terminal on port 5000...${NC}"
-gunicorn --worker-class eventlet -w 1 --bind 127.0.0.1:5000 app:app
+gunicorn --worker-class eventlet -w 1 --bind 127.0.0.1:5000 --timeout 120 --keep-alive 5 --log-level warning app:app
