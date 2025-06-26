@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>truth-terminal</title>
+    <title>void-terminal</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
 
@@ -497,7 +497,7 @@
     <div id="main-content">
         <div id="header">
             <div>
-                <h1>truth-terminal | retro IRC chat with multi-model support</h1>
+                <h1>void-terminal | retro IRC chat with multi-model support</h1>
                 <div id="help-text">
                     Use @ to mention models: @sonnet3.5, @opus4, @haiku3, etc. | Reply to a message to continue conversation
                 </div>
@@ -513,7 +513,7 @@
         <div id="chat-container"></div>
         
         <div id="input-container">
-            <span id="prompt">guest@truth-terminal:~$</span>
+            <span id="prompt">guest@void-terminal:~$</span>
             <textarea id="input" placeholder="Type your message..." autofocus></textarea>
         </div>
         
@@ -752,7 +752,7 @@
             
             // Add message content
             const promptChar = msg.type === 'user' ? '$' : msg.type === 'bot' ? '>' : '#';
-            content += `${msg.username}@truth-terminal:~${promptChar} ${msg.message}`;
+            content += `${msg.username}@void-terminal:~${promptChar} ${msg.message}`;
             
             // Add streaming cursor if streaming
             if (msg.streaming) {
