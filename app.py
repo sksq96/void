@@ -37,7 +37,7 @@ socketio = SocketIO(
     ping_interval=25,
     logger=False,
     engineio_logger=False,
-    async_mode='eventlet'
+    async_mode='gevent'
 )
 
 # Store current conversation in memory
