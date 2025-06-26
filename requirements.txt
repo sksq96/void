@@ -1,5 +1,6 @@
 flask==3.0.0
 flask-socketio==5.3.5
 python-socketio==5.10.0
-litellm==1.18.12
+anthropic>=0.18.0
 python-dotenv==1.0.0
+langfuse>=2,<3

@@ -1,6 +1,27 @@
-.env
+# Python
 __pycache__/
-*.pyc
-conversation_history.json
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
+ENV/
+.venv
+
+# Environment variables
+.env
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+conversations/
+conversation_history.json
