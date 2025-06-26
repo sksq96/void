@@ -21,7 +21,3 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
-
-# Project specific
-conversations/
-conversation_history.json
